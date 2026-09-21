@@ -6,9 +6,6 @@ const ELIMINATION_TRANSITION_MS = 400;
 const HUES = [48, 336, 202, 268, 146, 20, 186, 310, 89, 235];
 
 const elements = {
-  heroScreen: document.querySelector("#heroScreen"),
-  gameScreen: document.querySelector("#gameScreen"),
-  startButton: document.querySelector("#startButton"),
   playStage: document.querySelector("#playStage"),
   playersLayer: document.querySelector("#playersLayer"),
   touchCount: document.querySelector("#touchCount"),
@@ -240,15 +237,11 @@ function startGame() {
   activePlayers = new Map();
   lockedPlayers = [];
   releasedPlayerIds = new Set();
-  elements.heroScreen.hidden = true;
-  elements.gameScreen.hidden = false;
   elements.playersLayer.replaceChildren();
   elements.winnerBanner.hidden = true;
   updateGatheringUI();
   window.setTimeout(() => elements.playStage.focus({ preventScroll: true }), 50);
 }
-
-elements.startButton.addEventListener("click", startGame);
 
 elements.playStage.addEventListener("pointerdown", (event) => {
   if (state !== "gathering") return;
@@ -288,3 +281,5 @@ window.addEventListener("blur", () => {
     releaseLockedPlayers(lockedPlayers.map((player) => player.id));
   }
 });
+
+startGame();
