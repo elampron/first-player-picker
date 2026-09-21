@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no"
+    />
+    <meta name="theme-color" content="#111827" />
+    <meta
+      name="description"
+      content="First Up picks the first player for your board game with one touch each."
+    />
+    <title>First Up — Pick who goes first</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero-screen" id="heroScreen" aria-labelledby="heroTitle">
+        <div class="hero-orb hero-orb--one" aria-hidden="true"></div>
+        <div class="hero-orb hero-orb--two" aria-hidden="true"></div>
+        <div class="brand-lockup">
+          <span class="brand-mark" aria-hidden="true">✦</span>
+          <span>FIRST UP</span>
+        </div>
+        <div class="hero-copy">
+          <p class="eyebrow">THE FASTEST FAIR START</p>
+          <h1 id="heroTitle">Who’s<br /><em>first up?</em></h1>
+          <p class="hero-description">Everyone claims a spot. We pick the player to start.</p>
+        </div>
+        <div class="hero-card">
+          <div class="card-illustration" aria-hidden="true">
+            <span class="mini-dot mini-dot--yellow"></span>
+            <span class="mini-dot mini-dot--pink"></span>
+            <span class="mini-dot mini-dot--blue"></span>
+            <span class="mini-dot mini-dot--purple"></span>
+          </div>
+          <p>One finger each.<br /><strong>One player begins.</strong></p>
+        </div>
+        <button class="primary-button start-button" id="startButton" type="button">
+          <span>Start the round</span><span class="button-arrow" aria-hidden="true">→</span>
+        </button>
+        <p class="hero-footer">No names. No setup. Just play.</p>
+      </section>
+
+      <section class="game-screen" id="gameScreen" hidden aria-labelledby="gameTitle">
+        <header class="game-header">
+          <div class="brand-lockup brand-lockup--small">
+            <span class="brand-mark" aria-hidden="true">✦</span>
+            <span>FIRST UP</span>
+          </div>
+          <button class="text-button" id="resetButton" type="button">Reset</button>
+        </header>
+
+        <div
+          class="play-stage"
+          id="playStage"
+          aria-describedby="gameTitle stageHint liveStatus"
+          tabindex="0"
+        >
+          <div class="stage-grid" aria-hidden="true"></div>
+          <div class="stage-glow" aria-hidden="true"></div>
+          <div class="players-layer" id="playersLayer" aria-hidden="true"></div>
+          <div class="stage-content">
+            <p class="eyebrow" id="roundLabel">READY WHEN YOU ARE</p>
+            <h2 id="gameTitle">Place your<br /><em>fingertips.</em></h2>
+            <p class="stage-hint" id="stageHint">Everyone holds one finger on the screen. We’ll lock in once there are at least two.</p>
+          </div>
+          <div class="touch-count" id="touchCount" aria-hidden="true">
+            <span class="touch-count__number">0</span>
+            <span class="touch-count__label">touches</span>
+          </div>
+          <div class="winner-banner" id="winnerBanner" hidden>
+            <span class="winner-banner__sparkle" aria-hidden="true">✦</span>
+            <span>YOU’RE FIRST UP!</span>
+            <span class="winner-banner__sparkle" aria-hidden="true">✦</span>
+          </div>
+        </div>
+
+        <div class="control-dock">
+          <p class="status-text" id="statusText">Waiting for at least two fingers.</p>
+          <div class="meter" aria-hidden="true"><span id="meterFill"></span></div>
+          <div class="control-actions" id="controlActions">
+            <button class="secondary-button" id="demoPlayerButton" type="button">Add demo player</button>
+            <button class="quiet-button" id="clearButton" type="button">Clear hands</button>
+          </div>
+          <button class="primary-button play-again-button" id="playAgainButton" type="button" hidden>
+            <span>Play again</span><span class="button-arrow" aria-hidden="true">↻</span>
+          </button>
+          <p class="desktop-note">On a computer, use <strong>Add demo player</strong> (or press A) to test with a keyboard or mouse.</p>
+        </div>
+        <p id="liveStatus" class="sr-only" role="status" aria-live="polite"></p>
+      </section>
+    </main>
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>
