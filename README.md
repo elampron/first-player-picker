@@ -16,8 +16,8 @@ Open `http://localhost:4173`. For quick development without a build, use any sta
 
 ## How to play
 
-1. Tap **Start the round**.
-2. Every player presses and holds one finger in the play area.
+1. Open the page; the touch arena is ready immediately.
+2. Every player presses and holds one finger on the screen.
 3. With two or more fingers held still briefly, their places lock automatically.
 4. Everyone lifts their finger. The locked circles stay in place until every original finger is up.
 5. All circles pulse together, then the losing circles leave at once and the winner is revealed.
