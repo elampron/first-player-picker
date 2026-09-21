@@ -7,11 +7,8 @@
       content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no"
     />
     <meta name="theme-color" content="#111827" />
-    <meta
-      name="description"
-      content="First Up picks the first player for your board game with one touch each."
-    />
-    <title>First Up — Pick who goes first</title>
+    <meta name="description" content="Pick who goes first with one touch from every player." />
+    <title>Who goes first?</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -19,13 +16,9 @@
       <section class="hero-screen" id="heroScreen" aria-labelledby="heroTitle">
         <div class="hero-orb hero-orb--one" aria-hidden="true"></div>
         <div class="hero-orb hero-orb--two" aria-hidden="true"></div>
-        <div class="brand-lockup">
-          <span class="brand-mark" aria-hidden="true">✦</span>
-          <span>FIRST UP</span>
-        </div>
         <div class="hero-copy">
           <p class="eyebrow">THE FASTEST FAIR START</p>
-          <h1 id="heroTitle">Who’s<br /><em>first up?</em></h1>
+          <h1 id="heroTitle">Who goes<br /><em>first?</em></h1>
           <p class="hero-description">Everyone claims a spot. We pick the player to start.</p>
         </div>
         <div class="hero-card">
@@ -64,7 +57,7 @@
           </div>
           <div class="winner-banner" id="winnerBanner" hidden>
             <span class="winner-banner__sparkle" aria-hidden="true">✦</span>
-            <span>YOU’RE FIRST UP!</span>
+            <span>YOU GO FIRST!</span>
             <span class="winner-banner__sparkle" aria-hidden="true">✦</span>
           </div>
         </div>
@@ -72,12 +65,6 @@
         <div class="control-dock">
           <p class="status-text" id="statusText">Waiting for at least two fingers.</p>
           <div class="meter" aria-hidden="true"><span id="meterFill"></span></div>
-          <div class="winner-actions" id="winnerActions" hidden>
-            <button class="primary-button play-again-button" id="playAgainButton" type="button">
-              <span>Play again</span><span class="button-arrow" aria-hidden="true">↻</span>
-            </button>
-            <button class="quiet-button winner-reset-button" id="resetButton" type="button">Reset</button>
-          </div>
         </div>
         <p id="liveStatus" class="sr-only" role="status" aria-live="polite"></p>
       </section>

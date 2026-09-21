@@ -9,8 +9,6 @@ const elements = {
   heroScreen: document.querySelector("#heroScreen"),
   gameScreen: document.querySelector("#gameScreen"),
   startButton: document.querySelector("#startButton"),
-  resetButton: document.querySelector("#resetButton"),
-  playAgainButton: document.querySelector("#playAgainButton"),
   playStage: document.querySelector("#playStage"),
   playersLayer: document.querySelector("#playersLayer"),
   touchCount: document.querySelector("#touchCount"),
@@ -21,7 +19,6 @@ const elements = {
   roundLabel: document.querySelector("#roundLabel"),
   meterFill: document.querySelector("#meterFill"),
   winnerBanner: document.querySelector("#winnerBanner"),
-  winnerActions: document.querySelector("#winnerActions"),
 };
 
 let state = "intro";
@@ -204,7 +201,7 @@ function startReveal() {
   if (state !== "waitingForRelease" || !isRosterReadyToReveal(lockedPlayers, releasedPlayerIds)) return;
   state = "revealing";
   elements.roundLabel.textContent = "THE REVEAL";
-  elements.gameTitle.innerHTML = "Who’s<br /><em>first up?</em>";
+  elements.gameTitle.innerHTML = "Who goes<br /><em>first?</em>";
   runWinnerReveal(cancellationToken);
 }
 
@@ -228,11 +225,10 @@ async function runWinnerReveal(token) {
 function announceWinner(winner) {
   state = "winner";
   elements.roundLabel.textContent = "THE TABLE HAS SPOKEN";
-  elements.gameTitle.innerHTML = "You’re<br /><em>first up!</em>";
+  elements.gameTitle.innerHTML = "You go<br /><em>first!</em>";
   elements.stageHint.textContent = "Deal the cards. Make the first move. Enjoy the power responsibly.";
   winner.node?.classList.add("is-winner");
   elements.winnerBanner.hidden = false;
-  elements.winnerActions.hidden = false;
   setTouchCount(1, "winner");
   setStatus("Winner chosen! This player goes first.", "Winner chosen. The remaining player goes first.");
 }
@@ -248,26 +244,11 @@ function startGame() {
   elements.gameScreen.hidden = false;
   elements.playersLayer.replaceChildren();
   elements.winnerBanner.hidden = true;
-  elements.winnerActions.hidden = true;
   updateGatheringUI();
   window.setTimeout(() => elements.playStage.focus({ preventScroll: true }), 50);
 }
 
-function goHome() {
-  cancellationToken += 1;
-  window.clearTimeout(stableTimer);
-  state = "intro";
-  activePlayers = new Map();
-  lockedPlayers = [];
-  releasedPlayerIds = new Set();
-  elements.gameScreen.hidden = true;
-  elements.heroScreen.hidden = false;
-  elements.startButton.focus({ preventScroll: true });
-}
-
 elements.startButton.addEventListener("click", startGame);
-elements.playAgainButton.addEventListener("click", startGame);
-elements.resetButton.addEventListener("click", goHome);
 
 elements.playStage.addEventListener("pointerdown", (event) => {
   if (state !== "gathering") return;
