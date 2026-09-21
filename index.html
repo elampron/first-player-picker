@@ -44,14 +44,6 @@
       </section>
 
       <section class="game-screen" id="gameScreen" hidden aria-labelledby="gameTitle">
-        <header class="game-header">
-          <div class="brand-lockup brand-lockup--small">
-            <span class="brand-mark" aria-hidden="true">✦</span>
-            <span>FIRST UP</span>
-          </div>
-          <button class="text-button" id="resetButton" type="button">Reset</button>
-        </header>
-
         <div
           class="play-stage"
           id="playStage"
@@ -80,14 +72,12 @@
         <div class="control-dock">
           <p class="status-text" id="statusText">Waiting for at least two fingers.</p>
           <div class="meter" aria-hidden="true"><span id="meterFill"></span></div>
-          <div class="control-actions" id="controlActions">
-            <button class="secondary-button" id="demoPlayerButton" type="button">Add demo player</button>
-            <button class="quiet-button" id="clearButton" type="button">Clear hands</button>
+          <div class="winner-actions" id="winnerActions" hidden>
+            <button class="primary-button play-again-button" id="playAgainButton" type="button">
+              <span>Play again</span><span class="button-arrow" aria-hidden="true">↻</span>
+            </button>
+            <button class="quiet-button winner-reset-button" id="resetButton" type="button">Reset</button>
           </div>
-          <button class="primary-button play-again-button" id="playAgainButton" type="button" hidden>
-            <span>Play again</span><span class="button-arrow" aria-hidden="true">↻</span>
-          </button>
-          <p class="desktop-note">On a computer, use <strong>Add demo player</strong> (or press A) to test with a keyboard or mouse.</p>
         </div>
         <p id="liveStatus" class="sr-only" role="status" aria-live="polite"></p>
       </section>

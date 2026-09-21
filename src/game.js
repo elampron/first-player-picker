@@ -2,9 +2,9 @@
  * Pure, deterministic selection helpers. Supplying an RNG makes the game logic
  * repeatable in tests while the UI can use a stronger browser RNG at runtime.
  */
-export function selectEliminationIndex(players, rng = Math.random) {
+export function selectWinnerIndex(players, rng = Math.random) {
   if (!Array.isArray(players) || players.length < 2) {
-    throw new RangeError("At least two players are required to eliminate a player.");
+    throw new RangeError("At least two players are required to choose a winner.");
   }
 
   const value = rng();
@@ -15,18 +15,27 @@ export function selectEliminationIndex(players, rng = Math.random) {
   return Math.floor(value * players.length);
 }
 
-export function createEliminationPlan(players, rng = Math.random) {
+export function createWinnerSelection(players, rng = Math.random) {
   if (!Array.isArray(players) || players.length < 2) {
     throw new RangeError("At least two players are required to choose who goes first.");
   }
 
-  const remaining = [...players];
-  const eliminated = [];
+  const winnerIndex = selectWinnerIndex(players, rng);
+  const winner = players[winnerIndex];
 
-  while (remaining.length > 1) {
-    const index = selectEliminationIndex(remaining, rng);
-    eliminated.push(remaining.splice(index, 1)[0]);
-  }
+  return {
+    winner,
+    losers: players.filter((_, index) => index !== winnerIndex),
+  };
+}
 
-  return { eliminated, winner: remaining[0] };
+/**
+ * Locked spots are ready only when every original pointer has been released.
+ * Keeping this separate from DOM events makes the release gate testable.
+ */
+export function isRosterReadyToReveal(lockedPlayers, releasedPlayerIds) {
+  if (!Array.isArray(lockedPlayers) || lockedPlayers.length < 2) return false;
+  if (!releasedPlayerIds || typeof releasedPlayerIds.has !== "function") return false;
+
+  return lockedPlayers.every((player) => releasedPlayerIds.has(player.id));
 }
