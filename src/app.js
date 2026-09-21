@@ -1,9 +1,8 @@
-import { createEliminationPlan } from "./game.js";
+import { createWinnerSelection, isRosterReadyToReveal } from "./game.js";
 
 const STABLE_DELAY_MS = 1100;
-// Give every elimination round two seconds of suspense and reveal.
-const ROUND_FLASH_MS = 1500;
-const ELIMINATION_PAUSE_MS = 500;
+const REVEAL_PULSE_MS = 2000;
+const ELIMINATION_TRANSITION_MS = 400;
 const HUES = [48, 336, 202, 268, 146, 20, 186, 310, 89, 235];
 
 const elements = {
@@ -12,8 +11,6 @@ const elements = {
   startButton: document.querySelector("#startButton"),
   resetButton: document.querySelector("#resetButton"),
   playAgainButton: document.querySelector("#playAgainButton"),
-  clearButton: document.querySelector("#clearButton"),
-  demoPlayerButton: document.querySelector("#demoPlayerButton"),
   playStage: document.querySelector("#playStage"),
   playersLayer: document.querySelector("#playersLayer"),
   touchCount: document.querySelector("#touchCount"),
@@ -24,14 +21,14 @@ const elements = {
   roundLabel: document.querySelector("#roundLabel"),
   meterFill: document.querySelector("#meterFill"),
   winnerBanner: document.querySelector("#winnerBanner"),
-  controlActions: document.querySelector("#controlActions"),
+  winnerActions: document.querySelector("#winnerActions"),
 };
 
 let state = "intro";
 let activePlayers = new Map();
 let lockedPlayers = [];
+let releasedPlayerIds = new Set();
 let stableTimer;
-let demoPlayerCount = 0;
 let cancellationToken = 0;
 
 const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -48,6 +45,11 @@ function randomValue() {
 function setStatus(text, liveText = text) {
   elements.statusText.textContent = text;
   elements.liveStatus.textContent = liveText;
+}
+
+function setTouchCount(count, label = "touches") {
+  elements.touchCount.querySelector(".touch-count__number").textContent = count;
+  elements.touchCount.querySelector(".touch-count__label").textContent = label;
 }
 
 function playerRecord(id, x, y) {
@@ -80,7 +82,7 @@ function renderPlayers(players = activePlayers.values()) {
 
 function updateGatheringUI() {
   const count = activePlayers.size;
-  elements.touchCount.querySelector(".touch-count__number").textContent = count;
+  setTouchCount(count);
   elements.meterFill.style.width = `${Math.min(100, count * 50)}%`;
 
   if (count === 0) {
@@ -121,7 +123,7 @@ function addPointer(id, x, y) {
   resetStableTimer();
 }
 
-function removePointer(id) {
+function removeGatheringPointer(id) {
   if (state !== "gathering" || !activePlayers.has(id)) return;
   activePlayers.delete(id);
   renderPlayers();
@@ -142,44 +144,85 @@ function movePointer(id, x, y) {
 
 function lockPlayers() {
   window.clearTimeout(stableTimer);
-  if (activePlayers.size < 2) return;
-  state = "eliminating";
-  lockedPlayers = Array.from(activePlayers.values());
+  if (activePlayers.size < 2 || state !== "gathering") return;
+
+  state = "waitingForRelease";
+  lockedPlayers = Array.from(activePlayers.values(), ({ id, x, y, hue }) => ({ id, x, y, hue, node: null }));
+  releasedPlayerIds = new Set();
+  activePlayers.clear();
   renderPlayers(lockedPlayers);
   elements.playersLayer.querySelectorAll(".player-token").forEach((token) => token.classList.add("is-locked"));
-  elements.controlActions.hidden = true;
+  setTouchCount(lockedPlayers.length, "players");
   elements.roundLabel.textContent = "SPOTS LOCKED";
-  elements.gameTitle.innerHTML = "Picking<br /><em>first up…</em>";
-  elements.stageHint.textContent = "A fair elimination is about to begin.";
+  elements.gameTitle.innerHTML = "Lift<br /><em>together.</em>";
+  elements.stageHint.textContent = "Lift every finger to reveal the winner.";
   elements.meterFill.style.width = "100%";
-  setStatus(`${lockedPlayers.length} players locked. Choosing who goes first.`);
-  runElimination(cancellationToken);
+  setStatus(
+    `${lockedPlayers.length} players locked. Lift every finger to reveal the winner.`,
+    `${lockedPlayers.length} players locked. Lift every finger to reveal the winner.`,
+  );
 }
 
-async function runElimination(token) {
-  const plan = createEliminationPlan(lockedPlayers, randomValue);
-  const active = [...lockedPlayers];
+function updateReleaseProgress() {
+  const releasedCount = releasedPlayerIds.size;
+  const remainingCount = lockedPlayers.length - releasedCount;
+  const fingerWord = remainingCount === 1 ? "finger" : "fingers";
 
-  for (let round = 0; round < plan.eliminated.length; round += 1) {
-    if (token !== cancellationToken) return;
-    const out = plan.eliminated[round];
-    elements.roundLabel.textContent = `ROUND ${round + 1}`;
-    elements.gameTitle.innerHTML = "Feeling<br /><em>lucky?</em>";
-    elements.stageHint.textContent = `${active.length} players remain.`;
-    setStatus(`Round ${round + 1}. ${active.length} players still in.`);
-    active.forEach((player) => player.node?.classList.add("is-flashing"));
-    await sleep(ROUND_FLASH_MS);
-    if (token !== cancellationToken) return;
-    active.forEach((player) => player.node?.classList.remove("is-flashing"));
-    out.node?.classList.add("is-eliminated");
-    active.splice(active.indexOf(out), 1);
-    elements.stageHint.textContent = `${active.length} player${active.length === 1 ? "" : "s"} remain${active.length === 1 ? "s" : ""}.`;
-    setStatus(`A player has been eliminated. ${active.length} player${active.length === 1 ? "" : "s"} remain.`);
-    await sleep(ELIMINATION_PAUSE_MS);
+  if (remainingCount > 0) {
+    elements.stageHint.textContent = `${releasedCount} of ${lockedPlayers.length} lifted. Lift ${remainingCount} more ${fingerWord} to reveal the winner.`;
+    setStatus(`${releasedCount} of ${lockedPlayers.length} fingers lifted. Waiting for ${remainingCount} more.`);
+    return;
   }
 
-  if (token !== cancellationToken) return;
-  announceWinner(plan.winner);
+  elements.stageHint.textContent = "All fingers lifted. Revealing the winner…";
+  setStatus("All fingers lifted. Revealing the winner.");
+  startReveal();
+}
+
+function releaseLockedPlayers(ids) {
+  if (state !== "waitingForRelease") return;
+  let changed = false;
+  for (const id of ids) {
+    if (lockedPlayers.some((player) => player.id === id) && !releasedPlayerIds.has(id)) {
+      releasedPlayerIds.add(id);
+      changed = true;
+    }
+  }
+  if (!changed) return;
+  updateReleaseProgress();
+}
+
+function releaseLockedPointer(id) {
+  releaseLockedPlayers([id]);
+}
+
+function prefersReducedMotion() {
+  return window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
+}
+
+function startReveal() {
+  if (state !== "waitingForRelease" || !isRosterReadyToReveal(lockedPlayers, releasedPlayerIds)) return;
+  state = "revealing";
+  elements.roundLabel.textContent = "THE REVEAL";
+  elements.gameTitle.innerHTML = "Who’s<br /><em>first up?</em>";
+  runWinnerReveal(cancellationToken);
+}
+
+async function runWinnerReveal(token) {
+  const selection = createWinnerSelection(lockedPlayers, randomValue);
+  const pulseDuration = prefersReducedMotion() ? 0 : REVEAL_PULSE_MS;
+  const eliminationDuration = prefersReducedMotion() ? 0 : ELIMINATION_TRANSITION_MS;
+
+  lockedPlayers.forEach((player) => player.node?.classList.add("is-revealing"));
+  await sleep(pulseDuration);
+  if (token !== cancellationToken || state !== "revealing") return;
+
+  lockedPlayers.forEach((player) => player.node?.classList.remove("is-revealing"));
+  selection.losers.forEach((player) => player.node?.classList.add("is-eliminated"));
+  await sleep(eliminationDuration);
+  if (token !== cancellationToken || state !== "revealing") return;
+
+  announceWinner(selection.winner);
 }
 
 function announceWinner(winner) {
@@ -189,8 +232,8 @@ function announceWinner(winner) {
   elements.stageHint.textContent = "Deal the cards. Make the first move. Enjoy the power responsibly.";
   winner.node?.classList.add("is-winner");
   elements.winnerBanner.hidden = false;
-  elements.playAgainButton.hidden = false;
-  elements.touchCount.querySelector(".touch-count__number").textContent = "1";
+  elements.winnerActions.hidden = false;
+  setTouchCount(1, "winner");
   setStatus("Winner chosen! This player goes first.", "Winner chosen. The remaining player goes first.");
 }
 
@@ -200,13 +243,12 @@ function startGame() {
   state = "gathering";
   activePlayers = new Map();
   lockedPlayers = [];
-  demoPlayerCount = 0;
+  releasedPlayerIds = new Set();
   elements.heroScreen.hidden = true;
   elements.gameScreen.hidden = false;
   elements.playersLayer.replaceChildren();
   elements.winnerBanner.hidden = true;
-  elements.playAgainButton.hidden = true;
-  elements.controlActions.hidden = false;
+  elements.winnerActions.hidden = true;
   updateGatheringUI();
   window.setTimeout(() => elements.playStage.focus({ preventScroll: true }), 50);
 }
@@ -217,44 +259,27 @@ function goHome() {
   state = "intro";
   activePlayers = new Map();
   lockedPlayers = [];
+  releasedPlayerIds = new Set();
   elements.gameScreen.hidden = true;
   elements.heroScreen.hidden = false;
   elements.startButton.focus({ preventScroll: true });
 }
 
-function addDemoPlayer() {
-  if (state !== "gathering") return;
-  const rect = elements.playStage.getBoundingClientRect();
-  const slots = [
-    [0.32, 0.63], [0.7, 0.5], [0.48, 0.76], [0.22, 0.38], [0.78, 0.75],
-    [0.5, 0.34], [0.7, 0.28], [0.28, 0.82], [0.82, 0.38], [0.48, 0.53],
-  ];
-  const [xRatio, yRatio] = slots[demoPlayerCount % slots.length];
-  demoPlayerCount += 1;
-  addPointer(`demo-${demoPlayerCount}`, rect.width * xRatio, rect.height * yRatio);
-}
-
 elements.startButton.addEventListener("click", startGame);
 elements.playAgainButton.addEventListener("click", startGame);
 elements.resetButton.addEventListener("click", goHome);
-elements.clearButton.addEventListener("click", () => {
-  if (state !== "gathering") return;
-  activePlayers.clear();
-  demoPlayerCount = 0;
-  window.clearTimeout(stableTimer);
-  renderPlayers();
-  updateGatheringUI();
-  elements.playStage.focus({ preventScroll: true });
-});
-elements.demoPlayerButton.addEventListener("click", (event) => {
-  event.stopPropagation();
-  addDemoPlayer();
-});
 
 elements.playStage.addEventListener("pointerdown", (event) => {
   if (state !== "gathering") return;
   event.preventDefault();
-  elements.playStage.setPointerCapture?.(event.pointerId);
+  if (event.isTrusted) {
+    try {
+      elements.playStage.setPointerCapture?.(event.pointerId);
+    } catch {
+      // A browser may cancel the pointer before capture is available; its later
+      // cancel/lost-capture event is still handled by the release gate.
+    }
+  }
   const { x, y } = positionToStage(event);
   addPointer(`pointer-${event.pointerId}`, x, y);
 });
@@ -264,26 +289,21 @@ elements.playStage.addEventListener("pointermove", (event) => {
   movePointer(`pointer-${event.pointerId}`, x, y);
 });
 for (const eventName of ["pointerup", "pointercancel", "lostpointercapture"]) {
-  elements.playStage.addEventListener(eventName, (event) => removePointer(`pointer-${event.pointerId}`));
+  elements.playStage.addEventListener(eventName, (event) => {
+    const id = `pointer-${event.pointerId}`;
+    if (state === "gathering") removeGatheringPointer(id);
+    if (state === "waitingForRelease") releaseLockedPointer(id);
+  });
 }
 window.addEventListener("blur", () => {
-  if (state !== "gathering") return;
-  activePlayers.clear();
-  window.clearTimeout(stableTimer);
-  renderPlayers();
-  updateGatheringUI();
-});
-window.addEventListener("keydown", (event) => {
-  if (state !== "gathering" || event.metaKey || event.ctrlKey || event.altKey) return;
-  if (event.key.toLowerCase() === "a") {
-    event.preventDefault();
-    addDemoPlayer();
-  }
-  if (event.key === "Escape") {
-    event.preventDefault();
+  if (state === "gathering") {
     activePlayers.clear();
+    window.clearTimeout(stableTimer);
     renderPlayers();
     updateGatheringUI();
-    resetStableTimer();
+    return;
+  }
+  if (state === "waitingForRelease") {
+    releaseLockedPlayers(lockedPlayers.map((player) => player.id));
   }
 });
