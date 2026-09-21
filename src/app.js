@@ -3,6 +3,7 @@ import { createWinnerSelection, isRosterReadyToReveal } from "./game.js";
 const STABLE_DELAY_MS = 1100;
 const REVEAL_PULSE_MS = 2000;
 const ELIMINATION_TRANSITION_MS = 400;
+const RESTART_DELAY_MS = 3000;
 const HUES = [48, 336, 202, 268, 146, 20, 186, 310, 89, 235];
 
 const elements = {
@@ -23,6 +24,7 @@ let activePlayers = new Map();
 let lockedPlayers = [];
 let releasedPlayerIds = new Set();
 let stableTimer;
+let restartTimer;
 let cancellationToken = 0;
 
 const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -228,11 +230,21 @@ function announceWinner(winner) {
   elements.winnerBanner.hidden = false;
   setTouchCount(1, "winner");
   setStatus("Winner chosen! This player goes first.", "Winner chosen. The remaining player goes first.");
+
+  const token = cancellationToken;
+  window.clearTimeout(restartTimer);
+  restartTimer = window.setTimeout(() => {
+    if (token !== cancellationToken || state !== "winner") return;
+    state = "winnerReady";
+    elements.stageHint.textContent = "Place a finger to start a new round.";
+    setStatus("Ready for another round. Place a finger to begin.");
+  }, RESTART_DELAY_MS);
 }
 
 function startGame() {
   cancellationToken += 1;
   window.clearTimeout(stableTimer);
+  window.clearTimeout(restartTimer);
   state = "gathering";
   activePlayers = new Map();
   lockedPlayers = [];
@@ -244,6 +256,7 @@ function startGame() {
 }
 
 elements.playStage.addEventListener("pointerdown", (event) => {
+  if (state === "winnerReady") startGame();
   if (state !== "gathering") return;
   event.preventDefault();
   if (event.isTrusted) {

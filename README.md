@@ -22,7 +22,8 @@ Open `http://localhost:4173`. For quick development without a build, use any sta
 4. Everyone lifts their finger. The locked circles stay in place until every original finger is up.
 5. All circles pulse together, then the losing circles leave at once and the winner is revealed.
 
-Lifted or cancelled touches are removed safely before locking, so the app never chooses from fewer than two players. After locking, an up/cancel/lost-capture event counts as a lift; losing focus releases outstanding physical pointers safely too. The full round needs a touchscreen or another device that can provide two concurrent pointers; a regular desktop mouse can still exercise the one-pointer gathering state. The result remains on screen until the page is refreshed.
+Lifted or cancelled touches are removed safely before locking, so the app never chooses from fewer than two players. After locking, an up/cancel/lost-capture event counts as a lift; losing focus releases outstanding physical pointers safely too. The full round needs a touchscreen or another device that can provide two concurrent pointers; a regular desktop mouse can still exercise the one-pointer gathering state.
+After the winner has been visible for three seconds, placing another finger starts a fresh round and registers that touch as its first player.
 
 The app is plain HTML, CSS, and browser JavaScript: no backend and no runtime dependencies. Relative asset paths keep it compatible with GitHub Pages at `/first-player-picker/`.
 
