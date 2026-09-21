@@ -1,8 +1,9 @@
 import { createEliminationPlan } from "./game.js";
 
 const STABLE_DELAY_MS = 1100;
-const ROUND_FLASH_MS = 650;
-const ELIMINATION_PAUSE_MS = 700;
+// Give every elimination round a full four seconds of suspense and reveal.
+const ROUND_FLASH_MS = 3200;
+const ELIMINATION_PAUSE_MS = 800;
 const HUES = [48, 336, 202, 268, 146, 20, 186, 310, 89, 235];
 
 const elements = {
